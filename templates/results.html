@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exam Results & Analytics Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <div class="brand-icon">📊</div>
+      <span class="brand-title">Result Analyzer Dashboard</span>
+    </a>
+    <div class="nav-actions">
+      <a href="/" class="btn btn-secondary btn-sm">
+        📤 Upload New File
+      </a>
+      <a href="{{ url_for('download_all_zip') }}" class="btn btn-success btn-sm">
+        📦 Download All Report Cards (ZIP)
+      </a>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'error' if category == 'error' else 'success' }}">
+            <span>{% if category == 'error' %}⚠️{% else %}✅{% endif %}</span>
+            <div>{{ message }}</div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Top Summary Analytics Cards Grid -->
+    <div class="stats-grid">
+      
+      <div class="stat-card" style="--card-accent: #6366f1;">
+        <div class="stat-info">
+          <h3>Total Students</h3>
+          <div class="stat-value">{{ stats.total_students }}</div>
+          <div class="stat-subtext">Processed Records</div>
+        </div>
+        <div class="stat-icon">👥</div>
+      </div>
+
+      <div class="stat-card" style="--card-accent: #10b981;">
+        <div class="stat-info">
+          <h3>Pass Percentage</h3>
+          <div class="stat-value" style="color: #10b981;">{{ stats.pass_percentage }}%</div>
+          <div class="stat-subtext">{{ stats.passed_count }} Passed | {{ stats.failed_count }} Failed</div>
+        </div>
+        <div class="stat-icon">🎯</div>
+      </div>
+
+      <div class="stat-card" style="--card-accent: #06b6d4;">
+        <div class="stat-info">
+          <h3>Class Average</h3>
+          <div class="stat-value" style="color: #06b6d4;">{{ stats.class_average }}%</div>
+          <div class="stat-subtext">Overall Class Performance</div>
+        </div>
+        <div class="stat-icon">📈</div>
+      </div>
+
+      <div class="stat-card" style="--card-accent: #8b5cf6;">
+        <div class="stat-info">
+          <h3>Top Scorer</h3>
+          <div class="stat-value" style="font-size: 1.35rem; color: #a78bfa;">{{ stats.top_scorer.Name }}</div>
+          <div class="stat-subtext">Roll No: {{ stats.top_scorer.Roll_No }} ({{ stats.top_scorer.Percentage }}%)</div>
+        </div>
+        <div class="stat-icon">🏆</div>
+      </div>
+
+    </div>
+
+    <!-- Subject Averages Summary -->
+    <div class="card" style="padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;">
+      <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        📚 Subject-Wise Class Performance
+      </h3>
+      <div class="subject-grid">
+        {% for subj in stats.subject_stats %}
+          <div class="subject-card">
+            <div class="subject-name">{{ subj.subject }}</div>
+            <div class="subject-avg">{{ subj.average }} <span style="font-size: 0.8rem; color: var(--text-muted);">/ 100</span></div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" style="width: {{ subj.average }}%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem;">
+              <span>Pass: {{ subj.pass_percentage }}%</span>
+              <span>Max: {{ subj.max }}</span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Search & Filters Toolbar -->
+    <form action="{{ url_for('results') }}" method="GET" class="filter-bar">
+      <div class="filter-group">
+        
+        <!-- Search Input -->
+        <input type="text" name="search" value="{{ current_filters.search }}" placeholder="🔍 Search Name or Roll No..." class="form-control" style="min-width: 220px;">
+
+        <!-- Status Filter -->
+        <select name="status" class="form-control">
+          <option value="">All Statuses</option>
+          <option value="Pass" {% if current_filters.status == 'Pass' %}selected{% endif %}>Pass Only</option>
+          <option value="Fail" {% if current_filters.status == 'Fail' %}selected{% endif %}>Fail Only</option>
+        </select>
+
+        <!-- Grade Filter -->
+        <select name="grade" class="form-control">
+          <option value="">All Grades</option>
+          {% for g in ['A+', 'A', 'B', 'C', 'D', 'F'] %}
+            <option value="{{ g }}" {% if current_filters.grade == g %}selected{% endif %}>Grade {{ g }}</option>
+          {% endfor %}
+        </select>
+
+        <!-- Sort By -->
+        <select name="sort_by" class="form-control">
+          <option value="Rank" {% if current_filters.sort_by == 'Rank' %}selected{% endif %}>Sort by Rank (Ascending)</option>
+          <option value="Name" {% if current_filters.sort_by == 'Name' %}selected{% endif %}>Sort by Student Name</option>
+          <option value="Roll_No" {% if current_filters.sort_by == 'Roll_No' %}selected{% endif %}>Sort by Roll No</option>
+          <option value="Total_Marks" {% if current_filters.sort_by == 'Total_Marks' %}selected{% endif %}>Sort by Total Marks (High to Low)</option>
+          <option value="Percentage" {% if current_filters.sort_by == 'Percentage' %}selected{% endif %}>Sort by Percentage</option>
+        </select>
+
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+        
+        {% if current_filters.search or current_filters.status or current_filters.grade or current_filters.sort_by != 'Rank' %}
+          <a href="{{ url_for('results') }}" class="btn btn-secondary btn-sm">Reset</a>
+        {% endif %}
+
+      </div>
+
+      <div style="color: var(--text-muted); font-size: 0.85rem;">
+        Showing <strong>{{ students|length }}</strong> of {{ stats.total_students }} students
+      </div>
+    </form>
+
+    <!-- Results Table -->
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="text-align: center;">Rank</th>
+            <th>Roll No</th>
+            <th>Student Name</th>
+            {% for subj in subject_columns %}
+              <th style="text-align: center;">{{ subj }}</th>
+            {% endfor %}
+            <th style="text-align: center;">Total</th>
+            <th style="text-align: center;">Percentage</th>
+            <th style="text-align: center;">Grade</th>
+            <th style="text-align: center;">Status</th>
+            <th style="text-align: center;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if students %}
+            {% for student in students %}
+              <tr>
+                <td style="text-align: center;">
+                  <span class="badge badge-rank">#{{ student.Rank }}</span>
+                </td>
+                <td style="font-weight: 600; color: var(--text-main);">{{ student.Roll_No }}</td>
+                <td style="font-weight: 600; color: var(--text-main);">{{ student.Name }}</td>
+                
+                {% for subj in subject_columns %}
+                  <td style="text-align: center;" class="{{ 'mark-fail' if student[subj] < 33 else '' }}">
+                    {{ "%.1f"|format(student[subj]) }}
+                  </td>
+                {% endfor %}
+
+                <td style="text-align: center; font-weight: 700; color: var(--text-main);">
+                  {{ "%.1f"|format(student.Total_Marks) }}
+                </td>
+
+                <td style="text-align: center; font-weight: 700; color: var(--accent-cyan);">
+                  {{ "%.2f"|format(student.Percentage) }}%
+                </td>
+
+                <td style="text-align: center;">
+                  <span class="badge badge-grade grade-{{ student.Grade|replace('+', '-plus') }}">
+                    {{ student.Grade }}
+                  </span>
+                </td>
+
+                <td style="text-align: center;">
+                  {% if student.Status == 'Pass' %}
+                    <span class="badge badge-pass">PASS</span>
+                  {% else %}
+                    <span class="badge badge-fail">FAIL</span>
+                  {% endif %}
+                </td>
+
+                <td style="text-align: center;">
+                  <a href="{{ url_for('download_pdf', roll_no=student.Roll_No) }}" class="btn btn-secondary btn-sm" title="Download Report Card PDF">
+                    📄 PDF
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="{{ 8 + subject_columns|length }}" class="empty-state">
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔍</div>
+                <h3>No Students Found</h3>
+                <p>No student records match the selected filter criteria.</p>
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <footer>
+    Exam Result Analyzer Dashboard &copy; 2026. Built with Python, Flask, Pandas & fpdf2.
+  </footer>
+
+</body>
+</html>

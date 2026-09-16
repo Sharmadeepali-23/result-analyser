@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exam Result Analyzer - Upload CSV</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <div class="brand-icon">📊</div>
+      <span class="brand-title">Result Analyzer</span>
+    </a>
+    <div class="nav-actions">
+      <a href="{{ url_for('download_sample') }}" class="btn btn-secondary btn-sm">
+        📥 Download Sample CSV
+      </a>
+    </div>
+  </nav>
+
+  <!-- Container -->
+  <div class="container">
+    
+    <!-- Flash Alert Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'error' if category == 'error' else 'success' }}">
+            <span>{% if category == 'error' %}⚠️{% else %}✅{% endif %}</span>
+            <div>{{ message }}</div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="upload-hero">
+      <h1 class="upload-title">Automated Exam Result Grading & Analytics</h1>
+      <p class="upload-subtitle">Upload your student marks CSV file to instantly generate auto-graded results, class analytics, and downloadable PDF report cards.</p>
+    </div>
+
+    <!-- Upload Form Card -->
+    <div class="card" style="max-width: 680px; margin: 0 auto;">
+      <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
+        
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone-icon">📁</div>
+          <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Choose a CSV file or drag & drop here</h3>
+          <p style="color: var(--text-muted); font-size: 0.875rem;">Supports .csv files up to 16 MB</p>
+          
+          <input type="file" name="file" id="fileInput" class="file-input" accept=".csv" required>
+          
+          <div id="fileNameDisplay" class="file-name-display" style="display: none;"></div>
+        </div>
+
+        <div style="margin-top: 1.5rem; text-align: center;">
+          <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.85rem;">
+            🚀 Process & Analyze Results
+          </button>
+        </div>
+
+      </form>
+
+      <!-- CSV Format Guide -->
+      <div class="format-guide">
+        <h4>📋 Expected CSV File Requirements:</h4>
+        <ul style="padding-left: 1.25rem; font-size: 0.875rem; color: var(--text-sub); line-height: 1.7;">
+          <li>Mandatory columns: <code>Roll_No</code>, <code>Name</code></li>
+          <li>Subject columns: <code>Subject1</code>, <code>Subject2</code>, ... (e.g. Maths, Physics, etc.)</li>
+          <li>Marks must be numeric values between <code>0</code> and <code>100</code>.</li>
+          <li>Roll Numbers must be unique across all rows.</li>
+        </ul>
+      </div>
+
+    </div>
+
+  </div>
+
+  <footer>
+    Exam Result Analyzer & Auto-Grading System &copy; 2026. Powered by Python, Flask, Pandas & fpdf2.
+  </footer>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    const dropzone = document.getElementById('dropzone');
+
+    fileInput.addEventListener('change', (e) => {
+      if (fileInput.files.length > 0) {
+        fileNameDisplay.textContent = '📄 Selected File: ' + fileInput.files[0].name;
+        fileNameDisplay.style.display = 'block';
+      }
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+      }, false);
+    });
+  </script>
+
+</body>
+</html>
