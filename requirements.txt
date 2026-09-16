@@ -1,2 +1,5 @@
 gunicorn
 flask
+pandas
+openpyxl
+reportlab
