@@ -3,3 +3,7 @@ flask
 pandas
 openpyxl
 reportlab
+pillow
+numpy
+markupsafe
+click
