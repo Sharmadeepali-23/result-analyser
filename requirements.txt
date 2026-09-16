@@ -1,9 +1,6 @@
-gunicorn
-flask
-pandas
-openpyxl
-reportlab
-pillow
-numpy
-markupsafe
-click
+Flask>=3.0.0
+pandas>=2.2.0
+reportlab>=4.1.0
+gunicorn>=21.2.0
+Werkzeug>=3.0.0
+fpdf2
